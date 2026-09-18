@@ -1,0 +1,52 @@
+{
+  "lang": "en",
+  "name": "Luis Alberto Arias Llaguno",
+  "location": "Querétaro, Querétaro, México",
+  "phone": "55 4004 4582",
+  "email": "luisariasllaguno@gmail.com",
+  "linkedin": "https://www.linkedin.com/in/luis-alberto-arias-llaguno/",
+  "github": "https://github.com/luiselodeon",
+  "summary": "Information Technology Engineering student focused on data analysis, artificial intelligence, and software development. Experienced in building automated workflows, developing AI agents, and deploying predictive models.",
+  "education": [
+    {
+      "institution": "Universidad Anáhuac Querétaro",
+      "location": "Querétaro, QRO",
+      "degree": "Information Technologies and Digital Business Engineering",
+      "gpa": "4.0",
+      "details": [
+        "Member of Excellence Program Vértice",
+        "Anáhuac Leadership and Excellence Diploma (Jan 2023 – Dic 2025)",
+        "Professional Competency Development Diploma (Jan 2023 - Dic 2025)",
+        "Outstanding participation in Vara MegaHackathon – Oct 2024"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "company": "Data Pulse Analytics",
+      "location": "Querétaro, QRO",
+      "role": "Data Science Intern",
+      "period": "Jun 2025 – Dic 2025",
+      "bullets": [
+        "Backend development of technological solutions for educational institutions, including an information management system for UANL.",
+        "Integration of artificial intelligence agents for analysis, recommendation, and automated response tasks within the platform."
+      ]
+    },
+    {
+      "company": "Cimiento",
+      "location": "Querétaro, QRO",
+      "role": "Summer Trainee",
+      "period": "Jun 2025 – Sept 2025",
+      "bullets": [
+        "Designed and implemented complex automation workflows using n8n, integrating APIs, conditional logic, and external tools.",
+        "Configured a real-time WhatsApp chatbot through Webhooks, connecting multiple automated nodes for user interaction."
+      ]
+    }
+  ],
+  "projects": [],
+  "skills": {
+    "technical": "Python (Intermediate), Java (Beginner), SQL, Scikit-learn, Pandas, MLflow, Flask, n8n",
+    "languages": "English – Upper Intermediate (C1), Spanish – Native",
+    "interests": "Data Analysis, Artificial Intelligence, MLOps, Process Automation"
+  }
+}
