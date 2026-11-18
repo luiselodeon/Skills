@@ -1,41 +1,113 @@
 ---
 name: cv-job-tailor
-description: Reescribe y adapta CVs a vacantes específicas (LinkedIn o Indeed), integrando repositorios de GitHub (https://github.com/luiselodeon) y datos complementarios de LinkedIn (https://www.linkedin.com/in/luis-alberto-arias-llaguno/), traduciendo a inglés/español y exportando en DOCX o PDF.
+description: Adapta un CV a una vacante concreta y entrega un PDF optimizado para ATS y reclutadores, más un reporte de compatibilidad. Pide al usuario su LinkedIn, su GitHub y el link de la vacante (LinkedIn o Indeed), guarda un perfil persistente con su información y experiencia para reutilizarlo en futuras postulaciones, y genera el CV en español o inglés. Usa esta skill siempre que alguien comparta una vacante, oferta, job posting o link de LinkedIn/Indeed jobs, pida "adaptar/hacer/optimizar mi CV", "CV para este puesto", "resume for this job", quiera saber qué tan bien encaja en un puesto o traducir su CV, aunque no mencione la skill.
 ---
 
-# CV Job Tailor Skill
+# CV Job Tailor
 
-## Propósito
-Esta skill analiza una oferta laboral (LinkedIn, Indeed o texto provisto), evalúa el perfil base del usuario (`references/cv_template.json`), consulta proyectos relevantes en su GitHub (`https://github.com/luiselodeon`) y verifica información adicional en su perfil de LinkedIn (`https://www.linkedin.com/in/luis-alberto-arias-llaguno/`) en caso de que la vacante requiera competencias, certificaciones o detalles extendidos que no estén en el CV base. Finalmente, genera una versión optimizada para ATS y reclutadores en formato `.docx` o `.pdf`.
+Objetivo: un CV de **una página**, en **PDF**, que un reclutador entienda en 10 segundos y que un ATS puntúe alto para *esta* vacante, sin afirmar nada que la persona no pueda defender en una entrevista.
 
----
+## Archivos
 
-## Flujo de Trabajo
+- **Perfil de la persona** (persistente): `~/cv-job-tailor/<slug>/profile.json`, donde `<slug>` es el usuario de LinkedIn (`linkedin.com/in/<slug>/`). Es la fuente de verdad: todo lo que se sabe de la persona vive aquí y se reutiliza en cada postulación.
+- **Cada postulación**: `~/cv-job-tailor/<slug>/aplicaciones/<AAAA-MM-DD>_<empresa>/` con `vacante.md` (texto de la vacante — los anuncios se borran), `cv.json`, `CV_<Nombre>_<Empresa>.pdf` y el `.docx` intermedio.
+- `references/cv_template.json` — esquema del JSON de CV que recibe `scripts/export_cv.py`.
 
-### 1. Extracción y Análisis de la Vacante
-- Extraer palabras clave técnicas, nivel de seniority, certificaciones y responsabilidades principales de la oferta.
-- Identificar el idioma requerido para la postulación (español o inglés). Si no se explicita, utilizar el idioma original de la oferta.
+`~` es el home del usuario (en Windows `C:\Users\<usuario>`). Resuélvelo a ruta absoluta antes de escribir.
 
-### 2. Consulta de Proyectos en GitHub
-- Ejecutar `scripts/fetch_github.py --user luiselodeon [keywords...]` o consultar vía API/scraping para identificar repositorios que hagan match con la vacante (ej. Python, Machine Learning, APIs, n8n, SQL).
-- Seleccionar hasta 2 proyectos relevantes para poblar el campo `projects` del CV.
+## Principio rector: verdad antes que keywords
 
-### 3. Conexión y Consulta a LinkedIn (Información Adicional)
-- **URL de referencia:** `https://www.linkedin.com/in/luis-alberto-arias-llaguno/`
-- **Criterio de activación:** Si la vacante solicita certificaciones adicionales, diplomas, roles secundarios, actividades extracurriculares o un desglose más profundo de logros que no aparezca en `cv_template.json`:
-  - Consultar los datos extendidos del perfil mediante el script `scripts/fetch_linkedin.py --url https://www.linkedin.com/in/luis-alberto-arias-llaguno/` (o leer el archivo de contexto `references/linkedin_profile.json`).
-  - Incorporar únicamente aquellos datos validados que aporten valor directo a los requisitos de la vacante.
+Un CV con logros inventados se cae en la primera entrevista técnica y quema la candidatura. Por eso:
+- No inventes métricas, tecnologías, roles, fechas ni certificaciones. Si una cifra haría más fuerte un bullet y no la tienes, pregúntala (paso 4).
+- Puedes **reformular** (mejores verbos, el término exacto de la vacante para algo que la persona sí hizo) y **reordenar/priorizar**. No puedes **añadir** hechos.
+- Un requisito sin evidencia va al reporte de brechas, no al CV.
 
-### 4. Reescritura y Adaptación del Contenido
-- **Summary:** Redactar un resumen profesional alineado con la misión de la vacante, sin alterar la veracidad de la experiencia.
-- **Experiencia Profesional:** Reforzar logros con métricas y palabras clave prioritarias en cada bullet point.
-- **Habilidades e Intereses:** Reordenar las competencias técnicas priorizando las exigidas en la vacante.
-- **Idioma:** Traducir fielmente al inglés o español con terminología estándar de la industria IT.
+## Flujo
 
-### 5. Generación del Documento
-- Guardar el nuevo contenido generado en un JSON temporal (siguiendo el esquema de `references/cv_template.json`).
-- Ejecutar:
-  ```bash
-  python scripts/export_cv.py --data temp_tailored_cv.json --format docx --output Luis_Arias_CV.docx
-  # o para PDF:
-  python scripts/export_cv.py --data temp_tailored_cv.json --format pdf --output Luis_Arias_CV.pdf
+### 1. Pedir los datos (un solo mensaje)
+Al invocarse, si el usuario no los dio ya, pide de una vez:
+1. Link de su perfil de **LinkedIn**.
+2. Link de su perfil de **GitHub** (opcional si no tiene).
+3. Link de la **vacante** en LinkedIn o Indeed (o el texto de la vacante).
+4. Idioma del CV si no quiere el de la vacante.
+
+Avisa en el mismo mensaje que LinkedIn e Indeed suelen bloquear la lectura automática, así que conviene adjuntar también **el PDF de su perfil de LinkedIn** (en su perfil: *Más → Guardar en PDF*) o su CV actual, y tener a la mano el texto de la vacante por si el link no carga. Pedirlo desde el inicio ahorra una vuelta de conversación.
+
+### 2. Cargar o crear el perfil
+Calcula `<slug>` del link de LinkedIn y busca `~/cv-job-tailor/<slug>/profile.json`.
+
+- **Si existe**: léelo, dile al usuario que lo vas a usar (fecha de `sources.updated`) y pregúntale solo si hay algo nuevo (nuevo empleo, certificación, proyecto). Si adjuntó un PDF/CV nuevo, intégralo.
+- **Si no existe**, constrúyelo con:
+  - El PDF de LinkedIn o CV que haya adjuntado (fuente principal).
+  - El perfil de LinkedIn vía WebFetch, por si es legible (normalmente devuelve un muro de login; no insistas).
+  - Si no hay nada legible, pide que pegue su experiencia o adjunte el PDF. No inventes un perfil con lo que dice la URL.
+
+Formato de `profile.json`: el mismo esquema de `references/cv_template.json` (sin `section_order`), con **todo** el historial (no solo lo relevante a una vacante), más:
+```json
+"additional_experience": [{"title": "", "issuer": "", "date": "", "description": ""}],
+"volunteering": [],
+"facts": ["Datos confirmados por el usuario que no están en su CV: p. ej. 'El chatbot de Cimiento atendía ~300 conversaciones/semana'"],
+"sources": {"linkedin": "<url>", "github": "<url>", "updated": "AAAA-MM-DD"}
+```
+Guárdalo antes de seguir y dile al usuario dónde quedó: así la próxima vez solo tendrá que dar el link de la vacante.
+
+### 3. Leer y analizar la vacante
+- Intenta leer el link con WebFetch. Para LinkedIn, la forma `https://www.linkedin.com/jobs/view/<id>/` suele ser más legible que URLs con `currentJobId=`; extrae el id y prueba esa. Si sale vacío, un login o un captcha, pide el texto pegado.
+- Guarda el texto en `vacante.md` de la carpeta de la postulación.
+- Extrae: **must-have** y **nice-to-have**; **keywords exactas** tal como están escritas (el ATS compara cadenas: "Power BI", "scikit-learn", "LLMs"); seniority; idioma; empresa y puesto.
+
+### 4. Cruce con el perfil y preguntas
+Para cada must-have y keyword, busca evidencia en `profile.json` y GitHub. Clasifica: ✅ cubierto · 🟡 parcial/transferible · ❌ sin evidencia.
+
+GitHub:
+```bash
+python scripts/fetch_github.py --user <url-github> --readme --top 6 python flask "machine learning"
+```
+Pasa las keywords técnicas de la vacante. El README suele ser la única descripción real del repo; léelo antes de elegir. Elige 1–3 proyectos que cubran must-haves que la experiencia laboral no cubre; si ninguno encaja, no pongas proyectos.
+
+Si hay 🟡/❌ en must-haves o bullets clave sin resultado medible, haz **una sola ronda** de máximo 3–4 preguntas concretas ("¿Cuántos usuarios usaban el sistema?", "La vacante pide Docker, ¿lo has usado? ¿dónde?"). Guarda cada respuesta útil en `facts` (o en la sección que corresponda) de `profile.json` — así no se vuelve a preguntar. Si el usuario quiere ir directo, sigue sin esos datos y anótalos en el reporte.
+
+### 5. Redactar el CV
+Construye `cv.json` con el esquema de `references/cv_template.json`, seleccionando del perfil solo lo que sirve para esta vacante.
+
+- **headline**: título objetivo alineado al puesto, p. ej. "Data Science Intern | Python · ML · Automation". Solo con lo que el perfil respalde.
+- **summary**: 2–3 líneas, sin "yo"/"I" ni adjetivos vacíos ("apasionado", "hard-working"). Fórmula: *quién es (nivel + carrera/rol) → 2–3 fortalezas que la vacante pide, con evidencia → qué aporta al puesto*.
+- **experience** (2–4 bullets por rol, el más relevante primero): *verbo de acción en pasado + qué hizo + con qué (keywords de la vacante) + resultado o alcance*.
+  - Antes: "Integration of artificial intelligence agents for analysis, recommendation, and automated response tasks within the platform."
+  - Después: "Integrated AI agents into a university information system to automate analysis, recommendations and responses for UANL." — se añade alcance real, no un resultado supuesto.
+  - Una línea, máximo dos. Verbos distintos en cada bullet. Sin pronombres.
+- **projects**: `name`, `tech` (stack corto), `description` (qué resuelve y resultado), `url`.
+- **skills**: primero lo que la vacante pide, con su misma escritura. Quita lo irrelevante. Evita autoevaluaciones tipo "(Beginner)" salvo que la vacante pida nivel.
+- **section_order**: estudiante o recién egresado → `experience, projects, education, certifications, skills` suele funcionar; si no tiene experiencia laboral, o la vacante pesa lo académico (trainee, beca, investigación), pon `education` o `projects` primero.
+- **Idioma**: un solo idioma en todo el documento, incluidos meses (en: Jan, Dec · es: ene, dic) y títulos de diplomas. Empresas y tecnologías no se traducen.
+- **Longitud**: una página. Si sobra, corta lo menos relevante.
+
+### 6. Revisión antes de exportar
+- [ ] Cada must-have ✅ aparece con la keyword exacta al menos una vez (idealmente summary + bullet o skills).
+- [ ] Ningún dato que no esté en `profile.json` o en lo que respondió el usuario.
+- [ ] Ningún bullet repite verbo inicial ni pasa de dos líneas.
+- [ ] Idioma y formato de fechas consistentes.
+- [ ] Cabe en una página (≈ 450–550 palabras como referencia).
+
+### 7. Exportar a PDF
+Dependencias: `python -c "import docx, docx2pdf"`; si falla, `pip install python-docx docx2pdf`. `docx2pdf` usa Microsoft Word; sin Word, el script intenta LibreOffice.
+
+```bash
+python scripts/export_cv.py --data "<carpeta>/cv.json" --format pdf --output "<carpeta>/CV_<Nombre>_<Empresa>.pdf"
+```
+Abre el PDF (lectura de archivo) y comprueba que sea **una página** y que no haya texto cortado. Si pasa de una página, recorta contenido en `cv.json` y vuelve a exportar. Si la conversión a PDF falla, entrega el `.docx` y explica qué falta instalar.
+
+### 8. Entregar
+Responde con la ruta del PDF y un reporte breve:
+
+```
+**PDF:** <ruta absoluta>
+**Compatibilidad:** 6/8 must-haves cubiertos
+**Keywords incluidas:** Python, SQL, scikit-learn, REST API, ...
+**Brechas:** Docker (sin evidencia), Power BI (sin evidencia)
+**Cómo cerrarlas:** qué decir en la entrevista, proyecto rápido o curso concreto
+**Datos que mejorarían el CV:** métricas pendientes, etc.
+**Perfil guardado:** <ruta de profile.json>
+```
+
+El reporte vale tanto como el CV: le dice a la persona dónde está fuerte, qué le van a preguntar y qué no conviene afirmar.

@@ -1,52 +1,47 @@
 {
-  "lang": "en",
-  "name": "Luis Alberto Arias Llaguno",
-  "location": "Querétaro, Querétaro, México",
-  "phone": "55 4004 4582",
-  "email": "luisariasllaguno@gmail.com",
-  "linkedin": "https://www.linkedin.com/in/luis-alberto-arias-llaguno/",
-  "github": "https://github.com/luiselodeon",
-  "summary": "Information Technology Engineering student focused on data analysis, artificial intelligence, and software development. Experienced in building automated workflows, developing AI agents, and deploying predictive models.",
-  "education": [
-    {
-      "institution": "Universidad Anáhuac Querétaro",
-      "location": "Querétaro, QRO",
-      "degree": "Information Technologies and Digital Business Engineering",
-      "gpa": "4.0",
-      "details": [
-        "Member of Excellence Program Vértice",
-        "Anáhuac Leadership and Excellence Diploma (Jan 2023 – Dic 2025)",
-        "Professional Competency Development Diploma (Jan 2023 - Dic 2025)",
-        "Outstanding participation in Vara MegaHackathon – Oct 2024"
-      ]
-    }
-  ],
+  "lang": "es",
+  "name": "Nombre Completo",
+  "headline": "Puesto objetivo | 2-3 fortalezas clave",
+  "location": "Ciudad, Estado, País",
+  "phone": "",
+  "email": "",
+  "linkedin": "https://www.linkedin.com/in/usuario/",
+  "github": "https://github.com/usuario",
+  "summary": "2-3 líneas alineadas a la vacante.",
   "experience": [
     {
-      "company": "Data Pulse Analytics",
-      "location": "Querétaro, QRO",
-      "role": "Data Science Intern",
-      "period": "Jun 2025 – Dic 2025",
-      "bullets": [
-        "Backend development of technological solutions for educational institutions, including an information management system for UANL.",
-        "Integration of artificial intelligence agents for analysis, recommendation, and automated response tasks within the platform."
-      ]
-    },
-    {
-      "company": "Cimiento",
-      "location": "Querétaro, QRO",
-      "role": "Summer Trainee",
-      "period": "Jun 2025 – Sept 2025",
-      "bullets": [
-        "Designed and implemented complex automation workflows using n8n, integrating APIs, conditional logic, and external tools.",
-        "Configured a real-time WhatsApp chatbot through Webhooks, connecting multiple automated nodes for user interaction."
-      ]
+      "company": "Empresa",
+      "location": "Ciudad",
+      "role": "Puesto",
+      "period": "ene 2025 – dic 2025",
+      "bullets": ["Verbo + qué + con qué + resultado/alcance."]
     }
   ],
-  "projects": [],
+  "projects": [
+    {
+      "name": "repo-name",
+      "tech": "Python · Flask",
+      "description": "Qué resuelve y resultado.",
+      "url": "https://github.com/usuario/repo-name"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Universidad",
+      "location": "Ciudad",
+      "degree": "Carrera",
+      "period": "",
+      "gpa": "",
+      "details": ["Distinción o actividad relevante"]
+    }
+  ],
+  "certifications": [
+    {"title": "Certificación", "issuer": "Emisor", "date": "2025"}
+  ],
   "skills": {
-    "technical": "Python (Intermediate), Java (Beginner), SQL, Scikit-learn, Pandas, MLflow, Flask, n8n",
-    "languages": "English – Upper Intermediate (C1), Spanish – Native",
-    "interests": "Data Analysis, Artificial Intelligence, MLOps, Process Automation"
-  }
+    "technical": "Python, SQL, ...",
+    "languages": "Español – Nativo, Inglés – C1",
+    "interests": ""
+  },
+  "section_order": ["experience", "projects", "education", "certifications", "skills"]
 }

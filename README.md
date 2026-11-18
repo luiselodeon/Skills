@@ -2,9 +2,82 @@
 
 Colección de skills reutilizables para agentes de código.
 
+## Instalación
+
+Cada skill es una carpeta con un `SKILL.md`. Para instalarla basta con copiar esa carpeta (completa, con sus `scripts/` y `references/`) al directorio de skills del agente. Primero clona el repositorio:
+
+```bash
+git clone https://github.com/luiselodeon/Skills.git
+cd Skills
+```
+
+### Claude Code (`context-architect`, `cv-job-tailor`, `html-to-md`)
+
+| Alcance | Destino |
+|---|---|
+| Personal (todos tus proyectos) | `~/.claude/skills/<nombre-skill>/` |
+| Solo un proyecto (se comparte vía git) | `<proyecto>/.claude/skills/<nombre-skill>/` |
+
+```bash
+# macOS / Linux / Git Bash
+mkdir -p ~/.claude/skills
+cp -r cv-job-tailor ~/.claude/skills/
+```
+
+```powershell
+# Windows PowerShell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills" | Out-Null
+Copy-Item -Recurse cv-job-tailor "$env:USERPROFILE\.claude\skills\"
+```
+
+Reinicia Claude Code; la skill se activa sola cuando la tarea coincide con su descripción, o puedes invocarla con `/<nombre-skill>`.
+
+### Claude.ai (web / escritorio)
+
+Comprime la carpeta de la skill en un `.zip` (con la carpeta en la raíz del zip) y súbelo en **Configuración → Capacidades → Skills**:
+
+```bash
+zip -r cv-job-tailor.zip cv-job-tailor
+```
+
+Las skills que ejecutan scripts locales (`cv-job-tailor`, `context-architect`) funcionan mejor en Claude Code, donde tienen acceso a tu sistema de archivos y a Python.
+
+### Antigravity CLI (`context-architect-gemini`, `cv-job-tailor`, `html-to-md`)
+
+| Alcance | Destino |
+|---|---|
+| Personal (todos tus proyectos) | `~/.gemini/config/skills/<nombre-skill>/` |
+| Solo un proyecto (se comparte vía git) | `<proyecto>/.agents/skills/<nombre-skill>/` |
+
+```bash
+# macOS / Linux / Git Bash
+mkdir -p ~/.gemini/config/skills
+cp -r context-architect-gemini ~/.gemini/config/skills/
+```
+
+```powershell
+# Windows PowerShell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.gemini\config\skills" | Out-Null
+Copy-Item -Recurse context-architect-gemini "$env:USERPROFILE\.gemini\config\skills\"
+```
+
+También puedes registrar la carpeta del clon sin copiarla mediante `entries` en `~/.gemini/config/skills.json` o `<proyecto>/.agents/skills.json`. Al iniciar `agy`, la skill se descubre automáticamente, se activa cuando la tarea coincide con su descripción o puedes invocarla con `/<nombre-skill>`.
+
+### Dependencias
+
+Algunas skills necesitan Python 3 y paquetes adicionales:
+
+| Skill | Instalar |
+|---|---|
+| `cv-job-tailor` | `pip install python-docx docx2pdf` (+ Microsoft Word o LibreOffice para generar PDF) |
+| `html-to-md` | `pip install -r html-to-md/requirements.txt` |
+| `context-architect`, `context-architect-gemini` | Solo Python 3 (biblioteca estándar) |
+
+Para actualizar una skill, haz `git pull` y vuelve a copiar la carpeta.
+
 ## `context-architect-gemini`
 
-Skill para diseñar, migrar y mantener una arquitectura de contexto modular y eficiente en tokens para **Gemini CLI** ([`context-architect-gemini/SKILL.md`](context-architect-gemini/SKILL.md)).
+Skill para diseñar, migrar y mantener una arquitectura de contexto modular y eficiente en tokens para **Gemini CLI** (compatible con `GEMINI.md` en **Antigravity CLI**) ([`context-architect-gemini/SKILL.md`](context-architect-gemini/SKILL.md)).
 
 ### ¿Qué genera y gestiona?
 
@@ -94,15 +167,15 @@ context-architect/
 
 ## `cv-job-tailor`
 
-Skill para adaptar y reescribir CVs según vacantes específicas (LinkedIn, Indeed o texto libre), integrando repositorios de GitHub y datos complementarios de LinkedIn, con traducción español/inglés y exportación a `.docx` o `.pdf` ([`cv-job-tailor/SKILL.md`](cv-job-tailor/SKILL.md)).
+Skill para adaptar un CV a una vacante de LinkedIn o Indeed y entregarlo en PDF optimizado para ATS, con reporte de compatibilidad ([`cv-job-tailor/SKILL.md`](cv-job-tailor/SKILL.md)).
 
 ### Flujo de trabajo
 
-1. **Extracción y análisis de vacante**: identifica palabras clave técnicas, seniority, certificaciones, responsabilidades e idioma requerido.
-2. **Consulta en GitHub**: busca hasta 2 proyectos relevantes mediante `fetch_github.py` según las tecnologías de la oferta.
-3. **Consulta en LinkedIn**: si faltan certificaciones, diplomas o experiencia complementaria en `cv_template.json`, consulta `linkedin_profile.json` o `fetch_linkedin.py`.
-4. **Adaptación del contenido**: ajusta resumen, logros con métricas, habilidades e idioma (español o inglés).
-5. **Exportación**: genera el CV final en `.docx` o `.pdf` a partir de un JSON con el esquema de `cv_template.json`.
+1. **Datos de entrada**: pide el link de LinkedIn, el de GitHub y el de la vacante (más el PDF del perfil de LinkedIn, porque LinkedIn bloquea la lectura automática).
+2. **Perfil persistente**: crea o reutiliza `~/cv-job-tailor/<usuario-linkedin>/profile.json` con la información y experiencia de la persona; las respuestas nuevas se guardan ahí.
+3. **Análisis de la vacante**: must-haves, keywords exactas, seniority e idioma; cruce con el perfil y GitHub (✅/🟡/❌).
+4. **Redacción**: resumen, bullets y habilidades alineados a la vacante sin inventar datos.
+5. **Exportación**: PDF de una página en `~/cv-job-tailor/<usuario>/aplicaciones/<fecha>_<empresa>/`, junto con la vacante y el JSON usado.
 
 ### Estructura de la skill
 
@@ -110,21 +183,20 @@ Skill para adaptar y reescribir CVs según vacantes específicas (LinkedIn, Inde
 cv-job-tailor/
 ├── SKILL.md                          # Flujo e instrucciones de adaptación de CV
 ├── references/
-│   ├── cv_template.json              # Plantilla base y esquema JSON del CV
-│   └── linkedin_profile.json         # Perfil de respaldo con datos extendidos de LinkedIn
+│   └── cv_template.json              # Esquema JSON del CV
 └── scripts/
-    ├── fetch_github.py               # Consulta repositorios en GitHub según keywords
-    ├── fetch_linkedin.py             # Busca información complementaria en linkedin_profile.json
-    └── export_cv.py                  # Exporta el JSON estructurado a .docx o .pdf
+    ├── fetch_github.py               # Ordena repositorios de GitHub según keywords (con README opcional)
+    └── export_cv.py                  # Exporta el JSON a .docx y .pdf (Word vía docx2pdf o LibreOffice)
 ```
 
 ### Scripts incluidos
 
 | Script | Propósito | Uso |
 |---|---|---|
-| [`fetch_github.py`](cv-job-tailor/scripts/fetch_github.py) | Filtra repositorios públicos de GitHub por palabras clave | `python cv-job-tailor/scripts/fetch_github.py --user luiselodeon [keywords...]` |
-| [`fetch_linkedin.py`](cv-job-tailor/scripts/fetch_linkedin.py) | Recupera certificaciones y experiencia extendida del perfil local de LinkedIn | `python cv-job-tailor/scripts/fetch_linkedin.py --url <URL_PERFIL>` |
-| [`export_cv.py`](cv-job-tailor/scripts/export_cv.py) | Genera el documento final en formato Word o PDF | `python cv-job-tailor/scripts/export_cv.py --data <cv.json> --format <docx\|pdf> --output <archivo>` |
+| [`fetch_github.py`](cv-job-tailor/scripts/fetch_github.py) | Ordena repositorios públicos de GitHub por coincidencia con la vacante | `python cv-job-tailor/scripts/fetch_github.py --user <url-github> --readme [keywords...]` |
+| [`export_cv.py`](cv-job-tailor/scripts/export_cv.py) | Genera el CV en Word o PDF | `python cv-job-tailor/scripts/export_cv.py --data <cv.json> --format pdf --output <archivo.pdf>` |
+
+Requiere `pip install python-docx docx2pdf` (y Microsoft Word o LibreOffice para el PDF).
 
 ## `html-to-md`
 
