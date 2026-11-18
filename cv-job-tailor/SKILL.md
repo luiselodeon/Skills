@@ -9,8 +9,8 @@ Objetivo: un CV de **una página**, en **PDF**, que un reclutador entienda en 10
 
 ## Archivos
 
-- **Perfil de la persona** (persistente): `~/cv-job-tailor/<slug>/profile.json`, donde `<slug>` es el usuario de LinkedIn (`linkedin.com/in/<slug>/`). Es la fuente de verdad: todo lo que se sabe de la persona vive aquí y se reutiliza en cada postulación.
-- **Cada postulación**: `~/cv-job-tailor/<slug>/aplicaciones/<AAAA-MM-DD>_<empresa>/` con `vacante.md` (texto de la vacante — los anuncios se borran), `cv.json`, `CV_<Nombre>_<Empresa>.pdf` y el `.docx` intermedio.
+- **Perfil de la persona** (persistente): `~/cv-job-tailor/<slug>/profile.json` (o la ruta indicada por el usuario), donde `<slug>` es el usuario de LinkedIn (`linkedin.com/in/<slug>/`). Es la fuente de verdad: todo lo que se sabe de la persona vive aquí y se reutiliza en cada postulación.
+- **Cada postulación**: `~/cv-job-tailor/<slug>/aplicaciones/<AAAA-MM-DD>_<empresa>/` (o la carpeta/ruta de exportación indicada por el usuario) con `vacante.md` (texto de la vacante — los anuncios se borran), `cv.json`, `CV_<Nombre>_<Empresa>.pdf` y el `.docx` intermedio. Si el usuario da una sola ruta base, guarda ahí tanto `profile.json` como los archivos exportados.
 - `references/cv_template.json` — esquema del JSON de CV que recibe `scripts/export_cv.py`.
 
 `~` es el home del usuario (en Windows `C:\Users\<usuario>`). Resuélvelo a ruta absoluta antes de escribir.
@@ -29,27 +29,42 @@ Al invocarse, si el usuario no los dio ya, pide de una vez:
 1. Link de su perfil de **LinkedIn**.
 2. Link de su perfil de **GitHub** (opcional si no tiene).
 3. Link de la **vacante** en LinkedIn o Indeed (o el texto de la vacante).
-4. Idioma del CV si no quiere el de la vacante.
+4. **Ruta donde guardar el perfil (`profile.json`) y exportar el PDF** (opcional; si ya tienes ahí tu `profile.json` o archivos previos con tu info, indícala; por defecto usa `~/cv-job-tailor/<slug>/`).
+5. **PDF de un CV anterior o actual** (opcional, adjunto o ruta en disco) para leerlo y combinar su información con la de LinkedIn.
+6. Idioma del CV si no quiere el de la vacante.
 
-Avisa en el mismo mensaje que LinkedIn e Indeed suelen bloquear la lectura automática, así que conviene adjuntar también **el PDF de su perfil de LinkedIn** (en su perfil: *Más → Guardar en PDF*) o su CV actual, y tener a la mano el texto de la vacante por si el link no carga. Pedirlo desde el inicio ahorra una vuelta de conversación.
+Avisa en el mismo mensaje que LinkedIn e Indeed suelen bloquear la lectura automática, así que conviene compartir también **el PDF de su perfil de LinkedIn** (en su perfil: *Más → Guardar en PDF*) además de su CV anterior/actual si tiene, y tener a la mano el texto de la vacante por si el link no carga. Pedirlo desde el inicio ahorra una vuelta de conversación.
 
 ### 2. Cargar o crear el perfil
-Calcula `<slug>` del link de LinkedIn y busca `~/cv-job-tailor/<slug>/profile.json`.
+Calcula `<slug>` del link de LinkedIn y determina la carpeta del perfil (la ruta indicada por el usuario o, por defecto, `~/cv-job-tailor/<slug>/`). **Analiza primero qué hay en esa carpeta**: revisa si existe `profile.json` y también si hay otros archivos con información del usuario (`.pdf` de CV o de LinkedIn, `.docx`, `.md`, `.txt` u otros `.json`).
 
-- **Si existe**: léelo, dile al usuario que lo vas a usar (fecha de `sources.updated`) y pregúntale solo si hay algo nuevo (nuevo empleo, certificación, proyecto). Si adjuntó un PDF/CV nuevo, intégralo.
-- **Si no existe**, constrúyelo con:
-  - El PDF de LinkedIn o CV que haya adjuntado (fuente principal).
-  - El perfil de LinkedIn vía WebFetch, por si es legible (normalmente devuelve un muro de login; no insistas).
-  - Si no hay nada legible, pide que pegue su experiencia o adjunte el PDF. No inventes un perfil con lo que dice la URL.
+- **Si `profile.json` ya existe**:
+  - Léelo y revisa `sources.linkedin_checked` y `sources.pdf_cv_checked` (si alguno falta, trátalo como `false`).
+  - **Si ambos son `true`** y no hay archivos nuevos en la carpeta ni compartidos por el usuario: **usa `profile.json` directamente sin volver a buscar en la web la información del usuario**. Dile al usuario que lo vas a usar (fecha de `sources.updated`) y pregúntale solo si hay algo nuevo (nuevo empleo, certificación, proyecto).
+  - **Si alguno es `false`** o hay archivos sin integrar (en la carpeta o compartidos ahora): extrae la información de las fuentes faltantes o nuevas (liga/PDF de LinkedIn y/o CV en PDF u otros archivos en la carpeta) y **complétalo** integrando lo nuevo en `profile.json` sin duplicar registros (si hay discrepancias en fechas o puestos, confírmalas antes de asumir). Actualiza los booleanos a `true` conforme se haya logrado revisar cada fuente y actualiza `sources.updated`.
+- **Si `profile.json` no existe**, constrúyelo leyendo y **combinando** todas las fuentes disponibles:
+  - Los archivos con información del usuario que ya estén en la carpeta (CV en PDF, PDF de LinkedIn, `.docx`, `.md`, `.txt`, etc.).
+  - El **PDF de su CV anterior/actual** y/o el **PDF de su perfil de LinkedIn** compartidos (adjuntos o por ruta en disco).
+  - El perfil de LinkedIn vía lectura web, por si es legible (normalmente devuelve un muro de login; no insistas).
+  - Fusiona toda la información conservando el historial completo y complementando roles, métricas, proyectos o habilidades para obtener el perfil más completo posible; si hay discrepancias (fechas o puestos distintos), confírmalas antes de asumir. Si no hay nada legible, pide que pegue su experiencia o comparta el PDF. No inventes un perfil con lo que dice la URL.
 
 Formato de `profile.json`: el mismo esquema de `references/cv_template.json` (sin `section_order`), con **todo** el historial (no solo lo relevante a una vacante), más:
 ```json
 "additional_experience": [{"title": "", "issuer": "", "date": "", "description": ""}],
 "volunteering": [],
 "facts": ["Datos confirmados por el usuario que no están en su CV: p. ej. 'El chatbot de Cimiento atendía ~300 conversaciones/semana'"],
-"sources": {"linkedin": "<url>", "github": "<url>", "updated": "AAAA-MM-DD"}
+"sources": {
+  "linkedin": "<url>",
+  "github": "<url>",
+  "linkedin_checked": true,
+  "pdf_cv_checked": true,
+  "updated": "AAAA-MM-DD"
+}
 ```
-Guárdalo antes de seguir y dile al usuario dónde quedó: así la próxima vez solo tendrá que dar el link de la vacante.
+- `linkedin_checked`: `true` solo si se logró extraer información del perfil de LinkedIn (vía web o vía PDF exportado de LinkedIn); `false` si bloqueó o no se ha revisado.
+- `pdf_cv_checked`: `true` si se leyó e integró al menos un CV en PDF del usuario; `false` en caso contrario.
+
+Guárdalo en la ruta elegida antes de seguir y dile al usuario dónde quedó: así la próxima vez solo tendrá que dar el link de la vacante.
 
 ### 3. Leer y analizar la vacante
 - Intenta leer el link con WebFetch. Para LinkedIn, la forma `https://www.linkedin.com/jobs/view/<id>/` suele ser más legible que URLs con `currentJobId=`; extrae el id y prueba esa. Si sale vacío, un login o un captcha, pide el texto pegado.
@@ -93,9 +108,9 @@ Construye `cv.json` con el esquema de `references/cv_template.json`, seleccionan
 Dependencias: `python -c "import docx, docx2pdf"`; si falla, `pip install python-docx docx2pdf`. `docx2pdf` usa Microsoft Word; sin Word, el script intenta LibreOffice.
 
 ```bash
-python scripts/export_cv.py --data "<carpeta>/cv.json" --format pdf --output "<carpeta>/CV_<Nombre>_<Empresa>.pdf"
+python scripts/export_cv.py --data "<carpeta>/cv.json" --format pdf --output "<ruta_pdf>/CV_<Nombre>_<Empresa>.pdf"
 ```
-Abre el PDF (lectura de archivo) y comprueba que sea **una página** y que no haya texto cortado. Si pasa de una página, recorta contenido en `cv.json` y vuelve a exportar. Si la conversión a PDF falla, entrega el `.docx` y explica qué falta instalar.
+Usa la ruta de exportación que indicó el usuario (si dio la ruta de un archivo `.pdf`, úsala tal cual; si no indicó ninguna, usa `<carpeta>/CV_<Nombre>_<Empresa>.pdf`). Abre el PDF (lectura de archivo) y comprueba que sea **una página** y que no haya texto cortado. Si pasa de una página, recorta contenido en `cv.json` y vuelve a exportar. Si la conversión a PDF falla, entrega el `.docx` y explica qué falta instalar.
 
 ### 8. Entregar
 Responde con la ruta del PDF y un reporte breve:
